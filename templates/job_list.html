@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Job Listings - HireEase{% endblock %}
+
+{% block content %}
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Find Your Dream Job</h1>
+            <p>Explore thousands of job opportunities with all the information you need.</p>
+            <a href="#" class="btn btn-primary">Start Your Search</a>
+        </div>
+    </section>
+    <section class="job-listings">
+        <div class="container">
+            <h2>Latest Job Openings</h2>
+            <div class="job-list">
+                {% for job in jobs %}
+                    <div class="job-card">
+                        <h3><a href="{{ url_for('job_detail', job_id=job.id) }}">{{ job.title }}</a></h3>
+                        <p class="company">{{ job.company }}</p>
+                        <p class="location">{{ job.location }}</p>
+                        <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-secondary">View Details</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for {{ job.title }} - HireEase{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="apply-section">
+        <h1>Apply for {{ job.title }}</h1>
+        <p class="company-location">{{ job.company }} - {{ job.location }}</p>
+        <form action="{{ url_for('submit_application', job_id=job.id) }}" method="POST" enctype="multipart/form-data" class="apply-form">
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            <div class="form-group">
+                <label for="cover_letter">Cover Letter</label>
+                <textarea id="cover_letter" name="cover_letter" rows="5" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="resume">Resume (PDF)</label>
+                <input type="file" id="resume" name="resume" accept=".pdf" required>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Submit Application</button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}
