@@ -68,13 +68,37 @@ def process_pdfs(company_path, job_path):
     text_chunks = get_text_chunks(all_texts)
     get_vector_store(text_chunks)
 
+jobs = [
+    {
+        'id': 1,
+        'title': 'Software Engineer',
+        'company': 'Tech Co.',
+        'location': 'San Francisco, CA',
+        'description': 'We are looking for a talented software engineer to join our team.',
+        'responsibilities': [
+            'Develop and maintain web applications',
+            'Collaborate with cross-functional teams',
+            'Write clean, efficient, and maintainable code'
+        ],
+        'skills': ['Python', 'JavaScript', 'SQL', 'Git']
+    },
+    {
+        'id': 2,
+        'title': 'Data Scientist',
+        'company': 'Data Insights Inc.',
+        'location': 'New York, NY',
+        'description': 'Join our data science team to solve complex problems using machine learning.',
+        'responsibilities': [
+            'Develop and implement machine learning models',
+            'Analyze large datasets to extract insights',
+            'Present findings to stakeholders'
+        ],
+        'skills': ['Python', 'R', 'Machine Learning', 'Statistics']
+    }
+]
+
 @app.route('/')
 def job_list():
-    # Example job data (replace with your actual job data)
-    jobs = [
-        {'id': 1, 'title': 'Software Engineer'},
-        {'id': 2, 'title': 'Data Scientist'}
-    ]
     return render_template('job_list.html', jobs=jobs)
 
 @app.route('/job/<int:job_id>')
@@ -94,6 +118,7 @@ def apply_form(job_id):
 @app.route('/submit_application/<int:job_id>', methods=['POST'])
 def submit_application(job_id):
     if request.method == 'POST':
+
         full_name = request.form['full_name']
         email = request.form['email']
         phone = request.form['phone']
@@ -105,6 +130,13 @@ def submit_application(job_id):
             if resume.filename != '':
                 filename = secure_filename(resume.filename)
                 resume.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+        # Here you would typically save this information to a database
+        # For now, we'll just print it and show a success message
+        print(f"Application received for job {job_id}:")
+        print(f"Name: {full_name}, Email: {email}, Phone: {phone}")
+        print(f"Cover Letter: {cover_letter}")
+        print(f"Resume filename: {filename}")
         
         flash('Your application has been submitted successfully!', 'success')
         return redirect(url_for('job_detail', job_id=job_id))
