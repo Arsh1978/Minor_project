@@ -7,7 +7,6 @@ from langchain.chains import RetrievalQA
 from langchain.llms import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 import os
-
 app = Flask(__name__)
 
 # Load model and tokenizer

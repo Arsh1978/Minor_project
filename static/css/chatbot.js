@@ -78,7 +78,6 @@ $(document).ready(function() {
             userInput.val('');
         }
     }
-
     function appendMessage(message, className) {
         const messageElement = $('<div>').text(message).addClass(className);
         chatLog.append(messageElement);
