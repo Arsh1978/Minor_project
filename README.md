@@ -106,3 +106,5 @@ Werkzeug                     3.0.4
 wheel                        0.44.0
 zipp                         3.20.2
 yarl                         1.14.0
+
+4) GOOGLE_API_KEY='AIzaSyBhueagem2guga-eqMAjX-PBdQV1hSQ4-w'
