@@ -95,7 +95,6 @@ $(document).ready(function() {
     $('#close-chatbot').on('click', function() {
         chatbotContainer.hide();
     });
-
     // Show chatbot when chat icon is clicked
     $('#chat-icon').on('click', function() {
         chatbotContainer.show();
