@@ -10,6 +10,7 @@ $(document).ready(function() {
     let jobRoleFile;
     let pdfsUploaded = false;
 
+    // Handle PDF file selection
     companyDescriptionInput.on('change', function(e) {
         companyDescriptionFile = e.target.files[0];
     });
@@ -18,6 +19,7 @@ $(document).ready(function() {
         jobRoleFile = e.target.files[0];
     });
 
+    // Handle PDF upload
     $('#upload-pdfs').on('click', function() {
         if (!companyDescriptionFile || !jobRoleFile) {
             alert("Please select both PDF files before uploading.");
@@ -44,8 +46,8 @@ $(document).ready(function() {
         });
     });
 
+    // Send message on button click or pressing Enter
     sendButton.on('click', sendMessage);
-
     userInput.on('keypress', function(e) {
         if (e.which === 13) {
             sendMessage();
@@ -60,31 +62,36 @@ $(document).ready(function() {
                 return;
             }
 
+            // Append user message to chat log
             appendMessage(userMessage, 'user-message');
 
             $.ajax({
                 url: '/chatbot',  // Ensure this matches the Flask route
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ question: userMessage }), // Ensure the key matches the expected input in Flask
+                data: JSON.stringify({ question: userMessage }), // Ensure the key matches expected input in Flask
                 success: function(response) {
-                    appendMessage(response.answer, 'chatbot-message'); // Match the response format
+                    // Append chatbot response to chat log
+                    appendMessage(response.answer, 'chatbot-message'); 
                 },
                 error: function(xhr, status, error) {
                     appendMessage("Error: " + xhr.responseJSON.error, 'error-message');
                 }
             });
 
+            // Clear user input
             userInput.val('');
         }
     }
+
+    // Append message to chat log
     function appendMessage(message, className) {
         const messageElement = $('<div>').text(message).addClass(className);
         chatLog.append(messageElement);
-        chatLog.scrollTop(chatLog[0].scrollHeight);
+        chatLog.scrollTop(chatLog[0].scrollHeight); // Scroll to bottom after adding message
     }
 
-    // Add event listener to close chatbot container
+    // Close chatbot container
     $('#close-chatbot').on('click', function() {
         chatbotContainer.hide();
     });

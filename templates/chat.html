@@ -9,25 +9,21 @@
 </head>
 <body>
 
-<!-- Chatbot Icon -->
-<button id="chat-icon" onclick="toggleChatbot()" style="position: fixed; bottom: 20px; right: 20px; font-size: 24px; cursor: pointer;">
-    💬
-</button>
 
 <!-- Chatbot Container -->
 <div id="chatbot-container" style="display: none; position: fixed; bottom: 80px; right: 20px; width: 300px; border: 1px solid #ccc; border-radius: 8px; background-color: white; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-    <div id="chatbot-header" style="background-color: #007bff; color: white; padding: 10px; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+    <div id="chatbot-header" style="background-color: #007bff; color: white; padding: 10px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; justify-content: space-between;">
         <h4 style="margin: 0;">Chatbot</h4>
         <button id="close-chatbot" onclick="toggleChatbot()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer;">X</button>
     </div>
     <div id="chatbot-body" style="padding: 10px; max-height: 400px; overflow-y: auto;">
         <div id="chat-log" style="margin-bottom: 10px;"></div>
-        <input type="text" id="user-input" placeholder="Ask me anything..." style="width: calc(100% - 22px); padding: 5px;">
+        <input type="text" id="user-input" placeholder="Ask me anything..." style="width: calc(100% - 22px); padding: 5px; margin-bottom: 10px;">
         <div>
             <!-- Upload PDF Files -->
-            <input type="file" id="company-description" accept=".pdf" style="margin-top: 5px; margin-right: 5px;">
-            <input type="file" id="job-role" accept=".pdf" style="margin-top: 5px; margin-right: 5px;">
-            <button id="send-button" style="margin-top: 5px;">Send</button>
+            <input type="file" id="company-description" accept=".pdf" style="margin-bottom: 5px; width: 100%;">
+            <input type="file" id="job-role" accept=".pdf" style="margin-bottom: 10px; width: 100%;">
+            <button id="send-button" style="width: 100%; padding: 5px; background-color: #007bff; color: white; border: none; cursor: pointer;">Send</button>
         </div>
     </div>
 </div>
@@ -91,5 +87,6 @@ document.getElementById('send-button').addEventListener('click', async function 
     }
 });
 </script>
+
 </body>
 </html>
