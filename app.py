@@ -9,10 +9,16 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
+from sklearn.metrics.pairwise import cosine_similarity
+from langchain.embeddings import HuggingFaceEmbeddings
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 # Load environment variables
 load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.getenv("google-api-key")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 app = Flask(__name__)
@@ -22,6 +28,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads/'  # create this folder in your project d
 # Ensure the upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Helper functions
 def get_pdf_text(pdf_docs):
     text = ""
     for pdf in pdf_docs:
@@ -29,6 +36,15 @@ def get_pdf_text(pdf_docs):
         for page in pdf_reader.pages:
             text += page.extract_text()
     return text
+
+def calculate_similarity_score(job_text, resume_text):
+    # Using a lightweight Hugging Face model for similarity scoring
+    model_name = 'distilbert-base-nli-stsb-mean-tokens'  # Fast and efficient model
+    embeddings = HuggingFaceEmbeddings(model_name=model_name)
+    job_embedding = embeddings.embed_query(job_text)
+    resume_embedding = embeddings.embed_query(resume_text)
+    score = cosine_similarity([job_embedding], [resume_embedding])[0][0]
+    return score
 
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
@@ -57,17 +73,13 @@ def get_conversational_chain():
     return chain
 
 def process_pdfs(company_path, job_path):
-    # Extract text from the PDFs
     company_text = get_pdf_text([company_path])
     job_text = get_pdf_text([job_path])
-
-    # Combine texts
     all_texts = company_text + "\n" + job_text
-
-    # Split text into chunks and create FAISS index
     text_chunks = get_text_chunks(all_texts)
     get_vector_store(text_chunks)
 
+# Mock job data
 jobs = [
     {
         'id': 1,
@@ -94,9 +106,24 @@ jobs = [
             'Present findings to stakeholders'
         ],
         'skills': ['Python', 'R', 'Machine Learning', 'Statistics']
+    },
+    {
+        'id': 3,
+        'title': 'Generative AI Intern',
+        'company': 'Extuent',
+        'location': 'FL, USA',
+        'description': 'We are seeking a Machine learning intern. This internship offers an exciting opportunity to work on cutting-edge AI and blockchain intersection projects.',
+        'responsibilities': [
+            'Assist in design and implementation cutting-edge machine learning models for complex tabular and time series data problems',
+            'Collaborate on end-to-end ML projects, from problem definition to deployment and monitoring',
+            ' Plan, execute, and successfully deploy a suite of cutting-edge AI-powered solutions, revolutionizing userexperience and operational efficiency: Elevator pitch summary generator, Resume parsing service, Profilesummary creator, Content moderation system',
+            'Proven experience in developing and deploying ML models for tabular'
+        ],
+        'skills': [ 'Amazon Web Services, AWS SageMaker, Docker, Git, GitHub Actions, Python, SQL, TensorFlow, Keras, Pytorch']
     }
 ]
 
+# Routes
 @app.route('/')
 def job_list():
     return render_template('job_list.html', jobs=jobs)
@@ -111,35 +138,69 @@ def job_detail(job_id):
 @app.route('/apply/<int:job_id>')
 def apply_form(job_id):
     job = next((job for job in jobs if job['id'] == job_id), None)
+    score = request.args.get('score', None)
+    if score is not None:
+        score = float(score)
     if job:
-        return render_template('apply_form.html', job=job)
+        return render_template('apply_form.html', job=job, score=score)
     return 'Job not found', 404
 
 @app.route('/submit_application/<int:job_id>', methods=['POST'])
 def submit_application(job_id):
     if request.method == 'POST':
+        # Extract job description
+        job = next((job for job in jobs if job['id'] == job_id), None)
+        if not job:
+            return "Job not found", 404
 
-        full_name = request.form['full_name']
-        email = request.form['email']
-        phone = request.form['phone']
-        cover_letter = request.form['cover_letter']
-        
-        # Handle resume upload
-        if 'resume' in request.files:
+        job_text = job['description']
+
+        # Get resume file and candidate's email
+        if 'resume' in request.files and 'email' in request.form:
             resume = request.files['resume']
+            candidate_email = request.form['email']
+
             if resume.filename != '':
                 filename = secure_filename(resume.filename)
-                resume.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        
-        # Here you would typically save this information to a database
-        # For now, we'll just print it and show a success message
-        print(f"Application received for job {job_id}:")
-        print(f"Name: {full_name}, Email: {email}, Phone: {phone}")
-        print(f"Cover Letter: {cover_letter}")
-        print(f"Resume filename: {filename}")
-        
-        flash('Your application has been submitted successfully!', 'success')
-        return redirect(url_for('job_detail', job_id=job_id))
+                resume_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                resume.save(resume_path)
+
+                # Extract resume text
+                resume_text = get_pdf_text([resume_path])
+
+                # Calculate similarity score
+                similarity_score = calculate_similarity_score(job_text, resume_text)
+
+                # Send email based on similarity score
+                sender_email = "namanhr823@gmail.com"
+                receiver_email = candidate_email
+                email_password = "--password--"
+
+                if similarity_score >= 0.5:
+                    subject = "Application Submitted - Interview Invitation"
+                    body = f"Your application has been submitted successfully!\n\nAfter reviewing your resume, we found a strong alignment with our job description, with a similarity score of {round(similarity_score, 2)}. We are excited to invite you to the next stage in our hiring process!. Please join the Google Meet link at [https://meet.google.com/hej-trnt-rjd] on [insert_date_and_time].Please confirm your availability by replying to this email. We look forward to speaking with you and learning more about your background and qualifications."
+                else:
+                    subject = "Application Submitted - Rejection Notice"
+                    body = f"Your application has been submitted successfully!\n\nAfter careful review, we found that your resume's similarity score with our job description was {round(similarity_score, 2)}, which is below the threshold required to advance to the next stage of our hiring process. Unfortunately, We encourage you to explore other opportunities with us in the future, and we wish you success in your job search."
+
+                message = MIMEMultipart()
+                message["From"] = sender_email
+                message["To"] = receiver_email
+                message["Subject"] = subject
+                message.attach(MIMEText(body, "plain"))
+
+                with smtplib.SMTP("smtp.gmail.com", 587) as server:
+                    server.starttls()
+                    server.login(sender_email, email_password)
+                    server.sendmail(sender_email, receiver_email, message.as_string())
+
+                # Flash message and redirect to job detail
+                flash('Your application has been submitted successfully!', 'success')
+
+                # Return a JSON response with the similarity score
+                return jsonify({'Application Status': 'success', 'score': similarity_score})
+
+        return "Invalid request", 400
 
 @app.route('/upload_pdfs', methods=['POST'])
 def upload_pdfs():
@@ -149,13 +210,11 @@ def upload_pdfs():
     company_pdf = request.files['company_description']
     job_pdf = request.files['job_role']
 
-    # Save the uploaded PDFs temporarily
     company_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(company_pdf.filename))
     job_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(job_pdf.filename))
     company_pdf.save(company_path)
     job_pdf.save(job_path)
 
-    # Process the PDFs
     process_pdfs(company_path, job_path)
 
     return jsonify({"message": "PDFs processed successfully"}), 200
@@ -164,16 +223,11 @@ def upload_pdfs():
 def chatbot():
     data = request.json
     user_question = data['question']
-
-    # Load the vector store with dangerous deserialization allowed
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
     docs = new_db.similarity_search(user_question)
-
     chain = get_conversational_chain()
-    
     response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
-
     return jsonify({"answer": response["output_text"]})
 
 @app.route('/chat')

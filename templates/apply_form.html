@@ -7,7 +7,8 @@
     <section class="apply-section">
         <h1>Apply for {{ job.title }}</h1>
         <p class="company-location">{{ job.company }} - {{ job.location }}</p>
-        <form action="{{ url_for('submit_application', job_id=job.id) }}" method="POST" enctype="multipart/form-data" class="apply-form">
+
+        <form action="{{ url_for('submit_application', job_id=job.id) }}" method="POST" enctype="multipart/form-data"   class="apply-form" id="apply-form">
             <div class="form-group">
                 <label for="full_name">Full Name</label>
                 <input type="text" id="full_name" name="full_name" required>
@@ -34,4 +35,32 @@
         </form>
     </section>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('apply-form');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        fetch('{{ url_for("submit_application", job_id=job.id) }}', {
+            method: 'POST',
+            body: new FormData(form)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.score) {
+                alert(`Your resume's similarity score with this job description: ${data.score}`);
+            alert('Your application has been submitted successfully!');
+            form.reset();
+        })
+        .catch(error => {
+            alert('An error occurred while submitting your application. Please try again.');
+            console.error('Error:', error);
+        });
+    });
+});
+</script>
 {% endblock %}
